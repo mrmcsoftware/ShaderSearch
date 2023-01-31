@@ -12,13 +12,7 @@ to the [Limitations](#limitations) section).
 (I purposely used an older browser for the screenshots because I prefer the 3d
 look over the flat button look of some modern browsers.)
 
-## Setup
-
-If you don't have a shadertoy API key, go to **https://www.shadertoy.com/howto**
-while logged into shadertoy, and follow the directions in the **How to build applications that use the shaders**
-section.  Once you have been given an API key, edit stoysearch.html and replace
-**PUT_YOUR_API_KEY_HERE** with your API key.  Of course, if you don't have a
-shadertoy.com account, you must first create one.
+## Setup and Running
 
 >**OPTIONAL:**  If you want a gradual transition between Dark and Light modes,
 >uncomment the line containing **transition: color 300ms, background-color 300ms;**
@@ -31,10 +25,6 @@ search path you could simply do the following, for example, at a command prompt:
 Or you could start your browser and use your browser's "Open File" (or
 equivalent) menu option.  Or you could use the **`file:///`** URI/protocol and
 specify the whole path.
-
->Note: **stoysearchkey.html** is an alternate version in which you don't put
->your API key in the html file - you either specify it as a URL parameter or
->you type it into the "**API key**" text box.
 
 ## User Interface
 
@@ -89,9 +79,6 @@ you probably will need to escape the special characters, depending on your OS
   - **cols=`{number}`** - Select number of columns (search results)
   - **filters=`{string}`** - Specify list of search filters to apply ({string} is a comma separated list with same names as the checkboxes)
   - **search=`{string}`** - Search using the specified {string} text
-
-  - **keyvisible=true** - **`Only available in stoysearchkey.html`** Force key to be shown
-  - **key=`{string}`** - **`Only available in stoysearchkey.html`** Specify your API key
 
 ### Text Boxes, Some Buttons, and Some Checkboxes
 
@@ -152,16 +139,6 @@ You may want to change that to wherever you choose to get jQuery from (or you
 may want to change which version of jQuery is used).  You can even download
 jquery.min.js to the same directory as stoysearch.html and avoid getting it
 from the internet every time.
-
-I don't really see any reason to do it, but you could add a URL parameter to
-optionally set the API key.  Not the most secure thing to do, but maybe you
-might have a need to do that.  Along the same lines, if you wanted to make this
-tool available to everyone on the internet (via a public website) but didn't
-want to use your API key, you could add a text box (probably
-**`type="password"`**) for the user to enter their API key.  Probably also add
-an optional cookie so they wouldn't have to type in the key every time (not a
-secure method though, but neither is putting the key in the html file).
-**`UPDATE`**:  I have implemented some of these ideas in **stoysearchkey.html**
 
 ## Author
 
