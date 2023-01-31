@@ -26,6 +26,12 @@ Or you could start your browser and use your browser's "Open File" (or
 equivalent) menu option.  Or you could use the **`file:///`** URI/protocol and
 specify the whole path.
 
+For a live demo, go to **https://mrmcsoftware.github.io/ShaderSearch** but do
+try to use your own copy instead.
+
+>Note: Ignore **`index.html`** and **`jquery.min.js`** .  They are only there
+>to make Github Pages work.
+
 ## User Interface
 
 While using this tool, you can press the **?** (Help) button to get the
