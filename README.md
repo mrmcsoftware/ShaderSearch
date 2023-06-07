@@ -148,7 +148,7 @@ You may want to change that to wherever you choose to get jQuery from (or you
 may want to change which version of jQuery is used).  You can even download
 jquery.min.js to the same directory as stoysearch.html and avoid getting it
 from the internet every time.  Or use **`stoysearch-no-jquery.html`** or
-**`stoysearch-no-jquery-no-fetch.html`** to avoid jQuery alltogether.
+**`stoysearch-no-jquery-no-fetch.html`** to avoid jQuery altogether.
 
 ## Author
 
