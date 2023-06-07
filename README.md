@@ -127,10 +127,13 @@ shader?  I have), to go through the search results.
 ## Possible Improvements
 
 There are some things that could be improved (either by me or by someone else
-inclined to do so).  One improvement would be to remove the reliance on
+inclined to do so).  ~~One improvement would be to remove the reliance on
 **jQuery**.  The hardest part would be to replace **getJSON** with the
 equivalent **AJAX** (XMLHttpRequest) code or even the fetch function.  The rest
-would be easy.
+would be easy.~~  I've made two versions that don't use jQuery.
+**`stoysearch-no-jquery.html`** uses fetch instead of .getJSON and
+**`stoysearch-no-jquery-no-fetch.html`** uses XMLHttpRequest instead of .getJSON
+or fetch (some browsers don't have fetch).
 
 You might notice that my javascript code isn't always consistent in how it does
 certain things.  This is partly because I believe in reusing code I've already
@@ -140,11 +143,11 @@ all.  My only requirement is that the different ways must not require the most
 up-to-date browsers.  But you might want consistency, so feel free to make it
 consistent.
 
-This tool currently gets **jquery.min.js** from Google (ajax.googleapis.com).
+~~This tool currently gets **jquery.min.js** from Google (ajax.googleapis.com).
 You may want to change that to wherever you choose to get jQuery from (or you
 may want to change which version of jQuery is used).  You can even download
 jquery.min.js to the same directory as stoysearch.html and avoid getting it
-from the internet every time.
+from the internet every time.~~  See above note.
 
 ## Author
 

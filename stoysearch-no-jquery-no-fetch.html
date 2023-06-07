@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>
+ShaderToy Search Tool by Mark Craig (youtube.com/MrMcSoftware) Copyright &copy; 2023
+</title>
+	<style>
+		body
+			{
+			background-color: black;
+			color: white;
+			/* Uncomment transition line for gradual dark/light mode change */
+			/* transition: color 300ms, background-color 300ms; */
+			}
+		a:link { color: #c0c000; }
+		a:visited { color: #00a000; }
+		body.dark-mode
+			{
+			background-color: black;
+			color: white;
+			}
+		body.dark-mode a:link { color: #c0c000; }
+		body.dark-mode a:visited { color: #00a000; }
+		body.light-mode
+			{
+			background-color: #d0d0d0;
+			color: black;
+			}
+		body.light-mode a:link { color: #0000f0; }
+		body.light-mode a:visited { color: #a000a0; }
+		.modal
+			{
+			display: none;
+			position: fixed;
+			z-index: 1;
+			padding-top: 100px;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			overflow: auto;
+			background-color: rgb(0,0,0);
+			background-color: rgba(0,0,0,0.4);
+			}
+		.modal-content
+			{
+			position: relative;
+			background-color: #171717;
+			margin: auto;
+			padding: 0;
+			border: 2px solid #6797ff;
+			width: 40%;
+			box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+			}
+		.close
+			{
+			color: white;
+			float: right;
+			font-size: 18px;
+			font-weight: bold;
+			}
+		.close:hover,
+		.close:focus
+			{
+			color: #ff4040;
+			text-decoration: none;
+			cursor: pointer;
+			}
+		.modal-header
+			{
+			padding: 2px 16px;
+			background-color: #1022e4;
+			color: white;
+			font-size: 14px;
+			font-weight: bold;
+			}
+		.modal-body { padding: 2px 16px; color: white; font-size: 12px; }
+	</style>
+</head>
+<body>
+	<script>
+		var APIkey="Ndrt4w";
+		var shids=[],numShaders,oldSelectNPP=1;
+		var numpp=12,curShader=0,numColumns=4;
+		var sSort,sFilter,noMiddle=false,rangeSelect=1;
+
+		window.onload=function()
+		{
+		for (var vObj={},i=0,vArr=window.location.search.substring(1).split('&');i<vArr.length;v=vArr[i++].split('='),vObj[v[0]]=v[1]) { }
+		if (vObj.dark==="false") { darkLightMode(); }
+		if (vObj.slinks==="false") { document.querySelector('#sLinksID').checked=false; }
+		if (vObj.sthumb==="true") { document.querySelector('#sThumbID').checked=true; }
+		if (vObj.nomiddle) { noMiddle=(vObj.nomiddle==="true")?true:false; }
+		if (vObj.help) { document.querySelector('#helpBtnID').style.display=(vObj.help==="true")?'inline-block':'none'; }
+		if (vObj.sort)
+			{
+			var sel=document.getElementById("sortID");
+			sel.selectedIndex=parseInt(vObj.sort)-1;
+			sSort=sel.value;
+			}
+		if (vObj.rangeselect) { rangeSelect=(vObj.rangeselect==="off")?0:1; }
+		if (vObj.npp)
+			{
+			var sel=document.getElementById("numPerPageID");
+			sel.selectedIndex=parseInt(vObj.npp)-1;
+			numPerPage();
+			}
+		if (vObj.showfilters==="true") { showFilters(); }
+		if (vObj.filters)
+			{
+			var arr=vObj.filters.split(",")
+			for (i=0;i<arr.length;i++)
+				{
+				document.querySelector('#filter'+arr[i]).checked=true;
+				}
+			}
+		if (vObj.cols) { numColumns=vObj.cols; }
+		if (vObj.search)
+			{
+			document.getElementById("searchTextID").value=vObj.search;
+			search();
+			}
+		}
+
+/*
+		$(document).ready(function() // this line is still jQuery but not needed
+		{
+		document.querySelector('#NextID').addEventListener('click',nextPage);
+		document.querySelector('#PrevID').addEventListener('click',prevPage);
+		});
+*/
+
+		function help()
+		{
+		var newWin=window.open("","Help","width=640,height=750,scrollbars=1,resizable=1,location=0,addressbar=0");
+		var html="<html><head></head><body bgcolor='#000000'><font color='#ffffff'>";
+		html+="<h2>Mouse Button Actions</h2>";
+		html+='Click <b>left mouse button</b> on a shader thumbnail to run the shader in place.  Tip: when you do this, move the pointer out of the thumbnail area to allow the control panel to go away.  If you desire the control panel to always be shown, hold down the <b>Ctrl</b> key on keyboard while doing the above mouse click.  If you want any possible sound muted, hold down both <b>Ctrl</b> and <b>Shift</b> while doing the above mouse click.  If you want to see a larger version of the thumbnail (and not run the shader), hold down the <b>Shift</b> key while doing the above mouse click.  Note: once you run a shader, these options are no longer available for that shader unless you reload the page via either the "<b>Reload page</b>" option of the "<b>Results Per Page</b>" button or any other feature that refreshes the page.  Larger versions are also shown if "<b>1 per page</b>" is selected with the <b>Results Per Page</b> button.  Note: thumbnails may all be different sizes, due to the fact that the thumbnail is created at the point of their shader\'s run (and characteristics (i.e. window size) of that run) in which their shader is saved.  By the way, be aware that some shaders don\'t have thumbnails, so sometimes you might see the standard browser\'s no image icon.<br><br>';
+		html+="Click the <b>middle mouse button</b> (unless you specified \"<b>nomiddle=true</b>\" in this page's URL, in which case it's the <b>right mouse button</b>) on a shader thumbnail to show a message box containing information about that shader.  If you want to see the shader tabs (code) associated with that shader, hold down the <b>Ctrl</b> key while doing the above mouse click.  Note: you may have to tell your browser to allow popups for this page.";
+		html+="<h2>URL Parameters</h2>";
+		html+="Use these like this (for example):<br><b>stoysearch.html?dark=false&amp;sthumb=true&amp;sort=3&amp;search=sdf</b><br><br>";
+		html+='<b>dark=false</b> - Turn off dark mode<br>';
+		html+='<b>slinks=false</b> - Turn off showing shadertoy.com links<br>';
+		html+='<b>sthumb=true</b> - Use smaller thumbnails<br>';
+		html+='<b>nomiddle=true</b> - Use right mouse button instead of middle<br>';
+		html+='<b>help=false</b> - Don\'t display the help button<br>';
+		html+='<b>rangeselect=off</b> - Don\'t show range page buttons<br>';
+		html+='<b>showfilters=true</b> - Show the search filter checkboxes<br>';
+		html+='<b>sort={number}</b> - Select the search sort ({number} is dropdown item number (1-5))<br>';
+		html+='<b>npp={number}</b> - Select number of shaders per page ({number} is dropdown item number (1-8))<br>';
+		html+='<b>cols={number}</b> - Select number of columns (search results)<br>';
+		html+='<b>filters={string}</b> - Specify list of search filters to apply ({string} is a comma separated list with same names as the checkboxes)<br>';
+		html+='<b>search={string}</b> - Search using the specified {string} text<br>';
+		html+="<h2>Text Boxes, Some Buttons, and Some Checkboxes</h2>";
+		html+='To search for shaders using a text string, type it into the top-left text box.  You can either press "<b>Enter</b>" on keyboard after you type the string or click the Search button.  If you leave the box blank, all shaders with the API enabled will be returned.<br><br>';
+		html+='Once you have some shader results, shader result number (of the first shader on the page) and page number text boxes will be shown.  If you would like to jump to a specific shader result number or page number, type it into the appropriate box and press <b>Enter</b>.  Note: you can also click the range page buttons (if <b>rangeselect=off</b> isn\'t specified) to jump to a new page.  And, of course, the <b>Next Page</b> and <b>Previous Page</b> buttons can be clicked to navigate the pages.<br><br>';
+		html+='Narrow down the search results by selecting various filters.  If the filter checkboxes aren\'t already visible, click "<b>Show Filters</b>".  Select any combination (can select more than 1) of filters.  Then run the search.  Note: soundinput is the same as shadertoy.com\'s Microphone, soundoutput is GPU Sound, and musicstream is Soundcloud.';
+		html+="<h2>Shadertoy.com Links</h2>";
+		html+='If "<b>Show links</b>" is checked, each shader search result will have an "<b>L</b>" next to it.  Click on the <b>L</b> to open up a new browser tab to it\'s shadertoy.com page.<br>';
+		html+="<h2>Limitations</h2>";
+		html+="This search tool will ONLY find/show shaders that have the API permission set.  This isn't due to this search tool, it is due to shadertoy.com's API and the obvious desire to allow the shader's author to decide how/if their shader can be accessed.  Because of this, this search tool isn't a replacement for shadertoy.com by any means - just a useful tool.  For example, because it doesn't automatically run any shader, it can be faster, and perhaps more importantly safer (ever have your computer or graphics card crash due to a shader?  I have), to go through the search results.  Well, that's it I guess.  Enjoy!";
+		html+="</font></body></html>";
+		newWin.document.open();
+		newWin.document.write(html);
+		newWin.document.close();
+		}
+
+		function myAlert(msg,title)
+		{
+		var modal=document.getElementById("ModalID");
+		var span=document.getElementsByClassName("close")[0];
+		var modalBody=document.getElementById("modalBodyID");
+		var modalHeader=document.getElementById("modalHeaderID");
+		modalBody.innerHTML=msg;
+		modalHeader.innerHTML=title;
+		modal.style.display="block";
+		span.onclick=function() { modal.style.display="none"; }
+		}
+
+		function showFilters()
+		{
+		var btn=document.getElementById("filtersID");
+		if (btn.innerHTML=="Hide Filters") { document.querySelector("#filterDivID").style.display='none'; btn.innerHTML="Show Filters"; }
+		else { document.querySelector("#filterDivID").style.display='inline-block'; btn.innerHTML="Hide Filters"; }
+		}
+
+		function darkLightMode()
+		{
+		var btn=document.getElementById("darkLightModeID");
+		var c=document.body.className;
+		if ((c=="dark-mode")||(c=="")) { document.body.className="light-mode"; btn.innerHTML="&#9789"; }
+		else { document.body.className="dark-mode"; btn.innerHTML="&#9788"; }
+		}
+
+		function nextPage()
+		{
+		curShader+=numpp;
+		if (curShader<numShaders) { getPage(); } else { curShader-=numpp; }
+		}
+
+		function prevPage()
+		{
+		curShader-=numpp;
+		if (curShader<0) { curShader=0; }
+		getPage();
+		}
+
+		function numPerPage()
+		{
+		var sel=document.getElementById("numPerPageID");
+		var n=Number(sel.value);
+		if (n==-1) { sel.selectedIndex=oldSelectNPP; }
+		else
+			{
+			//curShader+=numpp; // do I want it to go to next page automatic?
+			oldSelectNPP=sel.selectedIndex;
+			if (sel.selectedIndex>=0) { numpp=n; }
+			//curShader-=numpp;
+			//if (curShader<0) { curShader=0; } else if (curShader>=numShaders) { curShader=numShaders; }
+			}
+		if (shids.length>0) { getPage(); }
+		}
+
+		function sort()
+		{
+		var sel=document.getElementById("sortID");
+		sSort=sel.value;
+		}
+
+		function checkFilterItem(filterItem)
+		{
+		var id="#filter"+filterItem;
+		if (document.querySelector(id).checked) { sFilter+="&filter="+filterItem; }
+		}
+
+		function checkFilters()
+		{
+		sFilter="";
+		checkFilterItem("vr");
+		checkFilterItem("soundoutput");
+		checkFilterItem("soundinput");
+		checkFilterItem("webcam");
+		checkFilterItem("multipass");
+		checkFilterItem("musicstream");
+		}
+
+		function getShader(shid,event)
+		{
+		if (((event.button!=1)&&(!noMiddle))||((event.button!=2)&&(noMiddle))) { return; }
+		var req="https://www.shadertoy.com/api/v1/shaders/"+shid+"?key="+APIkey;
+		var request=new XMLHttpRequest();
+		request.open('GET',req,true); // true for asynchronously (default)
+		//request.responseType='json';
+		request.onload=function()
+			{
+			if ((request.status>=200)&&(request.status<400))
+				{
+				var data=JSON.parse(request.responseText);
+				var res=data.Shader;
+				//var description=$('<div>').text(res.info.description).html(); // this will work, but let's not use jquery for this.
+				var description=res.info.description.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\[url\]/g,'').replace(/\[\/url\]/g,'');
+				var name=res.info.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+				var username=res.info.username.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+				var str=name+" by "+username+"<br>"+description+"<br>Views: "+res.info.viewed+"  Likes: "+res.info.likes+"  Tabs: "+res.renderpass.length+"<br>";
+				if (res.info.tags.length>0)
+					{
+					str+="Tags: "+res.info.tags[0];
+					for (i=1;i<res.info.tags.length;i++) { str+=", "+res.info.tags[i]; }
+					str+="<br>";
+					}
+				str+=new Date(Number(res.info.date)*1000);
+				var title=res.info.name+" ("+shid+")";
+				myAlert(str,title);
+				if (event.ctrlKey)
+					{
+					for (i=0;i<res.renderpass.length;i++)
+						{
+						var html="";
+						var newTab=window.open("","_blank");
+						html='<html><head><title>'+res.renderpass[i].name+' ('+shid+')'+'</title></head><body bgcolor="#000000"><font color="#FFFFFF"><pre>';
+						html+=res.renderpass[i].code;
+						html+="</pre></font></body></html>";
+						newTab.document.open();
+						newTab.document.write(html);
+						newTab.document.close();
+						}
+					}
+				}
+			else
+				{
+				console.log("Getshader Error: "+request.statusText);
+				}
+			};
+		request.onerror=function(e)
+			{
+			alert(request.responseText||e.target.statusText||" Network Error ");
+			};
+		request.send();
+		return(false);
+		}
+
+		function loadShader(id,shid,event)
+		{
+		var width,height,gui,muted='false';
+		if ((event.shiftKey)&&(event.ctrlKey)) { gui='false'; muted='true'; }
+		else if (event.shiftKey) { window.open('https://www.shadertoy.com/media/shaders/'+shid+'.jpg','_blank'); return; }
+		else if (event.ctrlKey) { gui='true'; } else { gui='false'; }
+		var sThumb=(document.querySelector('#sThumbID').checked);
+		if (numpp==1) { width=640; height=400; }
+		else if (sThumb) { width=225; height=135; }
+		else { width=300; height=180; }
+		// Not sure if play should start at t=0 or t=10
+		id.innerHTML='<iframe allowfullscreen=\"\" frameborder=\"0\" width=\"'+width+'\" height=\"'+height+'\" src=\"https://www.shadertoy.com/embed/'+shid+'?gui='+gui+'&amp;t=0&amp;paused=false&amp;muted='+muted+'\"></iframe>';
+		//id.innerHTML='<iframe allowfullscreen=\"\" frameborder=\"0\" width=\"'+width+'\" height=\"'+height+'\" src=\"https://www.shadertoy.com/embed/'+shid+'?gui='+gui+'&amp;t=10&amp;paused=false&amp;muted='+muted+'\"></iframe>';
+		}
+
+		function jumpToShader(event)
+		{
+		if (event.keyCode==13)
+			{
+			var n=Number(document.querySelector("#curShaderID").value)-1;
+			if ((n<numShaders)&&(n>=0)) { curShader=n; getPage(); }
+			}
+		}
+
+		function jumpToPage(event)
+		{
+		if (event.keyCode==13)
+			{
+			var pageNum=Number(document.querySelector("#pageNumID").value)-1;
+			var n=pageNum*numpp;
+			if ((n<numShaders)&&(n>=0)) { curShader=n; getPage(); }
+			}
+		}
+
+		function jumpToPageNum(num)
+		{
+		var n=(num-1)*numpp;
+		if ((n<numShaders)&&(n>=0)) { curShader=n; getPage(); }
+		}
+
+		function searchForIt(event)
+		{
+		if (event.keyCode==13) { search(); }
+		}
+
+		function getPage()
+		{
+		var data0=document.getElementById("data-0");
+		var data1=document.getElementById("data-1");
+		if (typeof shids==='undefined') { data1.innerHTML=null; data0.innerHTML="No shaders found"; shids=[]; return; }
+		if (shids.length==0) { return; }
+		data0.innerHTML=null;
+		data1.innerHTML=null;
+		var pageNum=Math.floor(curShader/numpp+1);
+		var numPages=Math.ceil(numShaders/numpp);
+		//data0.innerHTML+=numShaders+" Shaders&nbsp;&nbsp;&nbsp; Page: "+pageNum+"/"+numPages+" ("+(curShader+1)+")";
+		var rangeStr="&nbsp;&nbsp;&nbsp;&nbsp;";
+		if (rangeSelect)
+			{
+			var rs=pageNum-4,re=pageNum+4,rfp=0,rlp=0,bwidth;
+			if (numPages>10)
+				{
+				if (rs<1) { re+=(1-rs); rs=1; }
+				if (re>numPages) { re=numPages; }
+				else if (re<numPages) { rlp=numPages; }
+				if (rs>1) { rfp=1; }
+				bwidth="style='width:3em;'";
+				if (numPages>99999) { bwidth="style='width:5em;'"; }
+				else if (numPages>9999) { bwidth="style='width:4em;'"; }
+				else if (numPages<100) { bwidth="style='width:2em;'"; }
+				}
+			else { rs=1; re=numPages; bwidth="style='width:2em;'"; }
+			if (rfp)
+				{
+				var ellipsis="";
+				if (rs-rfp>1) { ellipsis=" ... "; }	
+				rangeStr+="<button "+bwidth+" onclick='jumpToPageNum("+rfp+")'"+disabled+">"+rfp+"</button>"+ellipsis;
+				}
+			for (i=rs;i<=re;i++)
+				{
+				var disabled="";
+				if (i==pageNum) { disabled=" disabled"; }
+				rangeStr+="<button "+bwidth+" onclick='jumpToPageNum("+i+")'"+disabled+">"+i+"</button>";
+				}
+			if (rlp)
+				{
+				var ellipsis="";
+				if (rlp-re>1) { ellipsis=" ... "; }	
+				var disabled="";
+				if (pageNum==rlp) { disabled=" disabled"; }
+				rangeStr+=ellipsis+"<button "+bwidth+" onclick='jumpToPageNum("+rlp+")'"+disabled+">"+rlp+"</button>";
+				}
+			}
+		// can replace jQuery's .append() with data0.insertAdjacentHTML('beforeend',string);
+		// or could use appendChild() (with createElement()) (may need domManip())
+		// or initialize a string to "" (or null), += on the string, and data0.innerHTML= string at end of procedure
+		// or (but some would say not to do it this way):
+		data0.innerHTML+=numShaders+" Shaders&nbsp;&nbsp;&nbsp; (<input type='text' id='curShaderID' value='"+(curShader+1)+"' maxlength=5 size=3 onkeypress='jumpToShader(event)'>)&nbsp;&nbsp;&nbsp; Page: <input type='text' id='pageNumID' value='"+pageNum+"' maxlength=5 size=3 onkeypress='jumpToPage(event)'>/"+numPages+")"+rangeStr;
+		var sLinks=(document.querySelector('#sLinksID').checked);
+		var sThumb=(document.querySelector('#sThumbID').checked);
+		for (i=0;i<numpp;i++)
+			{
+			if (i+curShader>=numShaders) { break; }
+			var shid=shids[i+curShader];
+			var dimensions;
+			if (numpp==1) { dimensions=""; }
+			else if (sThumb) { dimensions="width=225 height=135"; }
+			else { dimensions="width=300 height=180"; }	
+			var cMenu="";
+			if (noMiddle) { cMenu="oncontextmenu='return false;' "; }
+			data1.innerHTML+="<span id='"+shid+"' onclick='loadShader(this,\""+shid+"\",event);' onmousedown='getShader(\""+shid+"\",event);' "+cMenu+"><img "+dimensions+" src='https://www.shadertoy.com/media/shaders/"+shid+".jpg'></span>";
+			if (sLinks) { data1.innerHTML+="<a target='_blank' rel='noopener noreferrer' href='https://www.shadertoy.com/view/"+shid+"'>L</a>"; }
+			if (i%numColumns==numColumns-1) { data1.innerHTML+="<br>"; }
+			}
+		}
+
+		function search()
+		{
+		document.getElementById("data-0").innerHTML=null;
+		document.getElementById("data-1").innerHTML=null;
+		curShader=0;
+		var str=document.querySelector("#searchTextID").value;
+		// params object will work, but I need to be able to specify multiple
+		// filters (e.g. filter=vr&filter=soundinput&vr=multipass)
+		/*
+		var params={key: APIkey};
+		if (typeof sSort!=='undefined') { params.sort=sSort; }
+		if (typeof sFilter!=='undefined') { params.filter=sFilter; }
+		$.getJSON("https://www.shadertoy.com/api/v1/shaders/query/"+str,params,
+		*/
+		var req="https://www.shadertoy.com/api/v1/shaders/query/"+str+"?key="+APIkey;
+		checkFilters(); req+=sFilter;
+		if (typeof sSort!=='undefined') { req+="&sort="+sSort; }
+		var request=new XMLHttpRequest();
+		request.open('GET',req,true);
+		//request.responseType='json';
+		request.onload=function()
+			{
+			if ((request.status>=200)&&(request.status<400))
+				{
+				var data=JSON.parse(request.responseText);
+				shids=data.Results;
+				numShaders=data.Shaders;
+				getPage();
+				}
+			else
+				{
+				console.log("Search Error: "+request.statusText);
+				}
+			};
+		request.onerror=function(e)
+			{
+			document.querySelector("#data-0").innerHTML="<p style='color: #F55;font-size:38px;font-weight:bold'>"+(request.responseText||e.target.statusText||" Network Error ")+"</p>";
+			};
+		request.send();
+		}
+	</script>
+<div style="float:left">
+&nbsp;
+<input id="searchTextID" type="text" value="" maxlength="100" size=32 onkeypress='searchForIt(event)' autofocus>
+<!--button id="searchID" onclick="search()" title="Search">&#x2315;</button-->
+<button id="searchID" onclick="search()" title="Search" style="margin-left:-6px"><div style="-webkit-transform: rotate(-45deg); 
+               -moz-transform: rotate(-45deg); 
+                 -o-transform: rotate(-45deg);
+                    transform: rotate(-45deg);">
+    &#9906;
+</div></button>
+&nbsp;
+<select id="numPerPageID" onchange="numPerPage()" title="Results Per Page">
+<option value="1">1 per page</option>
+<option value="12" selected>12 per page</option>
+<option value="24">24 per page</option>
+<option value="48">48 per page</option>
+<option value="72">72 per page</option>
+<option value="100">100 per page</option>
+<option value="10000000">All</option>
+<option value="-1">Reload page</option>
+</select>
+<select id="sortID" onchange="sort()" title="(Search) Sort By">
+<option value="popular" selected>Popular</option>
+<option value="newest">Newest</option>
+<option value="hot">Hot</option>
+<option value="love">Love</option>
+<option value="name">Name</option>
+</select>
+<button id="filtersID" onclick="showFilters()" style="width:7.5em" title="(Search) Filters">Show Filters</button>
+<!--select id="filterID" onchange="filter()" multiple size="7">
+<option value="" selected>No Filter</option>
+<option value="vr">vr</option>
+<option value="soundoutput">soundoutput</option>
+<option value="soundinput">soundinput</option>
+<option value="webcam">webcam</option>
+<option value="multipass">multipass</option>
+<option value="musicstream">musicstream</option>
+</select-->
+&nbsp;&nbsp;&nbsp;
+<button onclick="prevPage()" id="PrevID" title="Previous Page" style="font-size:38px; vertical-align:middle; line-height:20px; padding:0; padding-bottom:4px; font-weight:bold;">&#8678</button>
+<button onclick="nextPage()" id="NextID" title="Next Page" style="font-size:38px; vertical-align:middle; line-height:20px; padding:0; padding-bottom:4px; font-weight:bold;">&#8680</button>
+<!--button id="NextID" title="Next Page" style="font-size:38px; line-height:20px; padding:2px; transform:translate(0px,5px); font-weight:bold;">&#8680</button-->
+<!--button id="NextID" title="Next Page" style="font-size:24px; line-height:24px; padding:0; transform:translate(0px,12px);font-weight:bold;">&#8680</button-->
+<!--button id="NextID" title="Next Page">Next</button-->
+<!--button id="PrevID" title="Previous Page">Prev</button-->
+&nbsp;&nbsp;&nbsp;
+<button onclick="darkLightMode()" title="Darkmode/Lightmode Toggle"><div id="darkLightModeID">&#9788</div></button>
+<button id="helpBtnID" onclick="help()" title="Help" style="display:inline-block;">?</button>
+&nbsp;&nbsp;&nbsp;
+</div>
+<div>
+<input type="checkbox" id="sLinksID" checked onclick="getPage()"/>Show links<br>
+<input type="checkbox" id="sThumbID" onclick="getPage()"/>Small thumb
+</div>
+<div id="filterDivID" style="display:none">
+<input type="checkbox" id="filtervr"/>vr&nbsp;&nbsp;
+<input type="checkbox" id="filtersoundoutput"/>soundoutput&nbsp;&nbsp;
+<input type="checkbox" id="filtersoundinput"/>soundinput&nbsp;&nbsp;
+<input type="checkbox" id="filterwebcam"/>webcam&nbsp;&nbsp;
+<input type="checkbox" id="filtermultipass"/>multipass&nbsp;&nbsp;
+<input type="checkbox" id="filtermusicstream"/>musicstream
+<br><br>
+</div>
+<div id="data-0"></div>
+<div id="data-1"></div><br>
+<div id="ModalID" class="modal">
+<div class="modal-content">
+<div class="modal-header">
+<span id="modalHeaderID"></span>
+<span class="close">&times;</span>
+</div>
+<div id="modalBodyID" class="modal-body"></div>
+</div>
+</div>
+</body>
+</html>
