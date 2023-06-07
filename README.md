@@ -143,11 +143,12 @@ all.  My only requirement is that the different ways must not require the most
 up-to-date browsers.  But you might want consistency, so feel free to make it
 consistent.
 
-~~This tool currently gets **jquery.min.js** from Google (ajax.googleapis.com).
+**`stoysearch.html`** currently gets **jquery.min.js** from Google (ajax.googleapis.com).
 You may want to change that to wherever you choose to get jQuery from (or you
 may want to change which version of jQuery is used).  You can even download
 jquery.min.js to the same directory as stoysearch.html and avoid getting it
-from the internet every time.~~  See above note.
+from the internet every time.  Or use **`stoysearch-no-jquery.html`** or
+**`stoysearch-no-jquery-no-fetch.html`** to avoid jQuery alltogether.
 
 ## Author
 
